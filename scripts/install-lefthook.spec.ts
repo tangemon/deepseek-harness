@@ -15,6 +15,7 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import lefthookPackage from 'lefthook/package.json' with { type: 'json' }
 import { afterEach, describe, expect, it } from 'vitest'
 import { removeFixtureSafely, unlinkFixtureLinks } from './test-fixture-cleanup.ts'
 
@@ -869,8 +870,27 @@ describe('worktree-local Lefthook installer', { timeout: 30_000 }, () => {
       PATH: `${fakeBin}:${fixture.env.PATH ?? ''}`,
     })
     expect(result.status).toBe(1)
-    expect(result.stderr).toContain('Git 2.26 or newer is required')
+    expect(result.stderr).toContain('Git 2.27 or newer is required')
     expect(gitResult(fixture, fixture.main, ['config', '--get', 'extensions.worktreeConfig']).status).toBe(1)
     expect(existsSync(hooksPath(fixture, fixture.main))).toBe(false)
+  })
+
+  it.skipIf(process.platform === 'win32')('installs hooks with the pinned Lefthook release on Git 2.27', async () => {
+    const fixture = createFixture()
+    const realGit = commandResult('which', ['git'], fixture.main, fixture.env).stdout.trim()
+    const fakeBin = join(fixture.container, 'fake-bin')
+    write(
+      join(fakeBin, 'git'),
+      `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "git version 2.27.0"; exit 0; fi\nexec "${realGit}" "$@"\n`,
+      0o755,
+    )
+
+    const result = await runInstaller(fixture, fixture.main, {
+      PATH: `${fakeBin}:${fixture.env.PATH ?? ''}`,
+    })
+
+    expect(lefthookPackage.version).toBe('1.7.15')
+    expect(result.status, result.stderr).toBe(0)
+    expect(existsSync(join(hooksPath(fixture, fixture.main), 'pre-commit'))).toBe(true)
   })
 })

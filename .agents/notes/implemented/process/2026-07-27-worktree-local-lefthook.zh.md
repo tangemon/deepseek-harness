@@ -12,7 +12,7 @@ Lefthook 生成的钩子会优先使用安装时从对应 worktree 记录的绝�
 
 ## 决策
 
-钩子安装以 worktree 为作用域。当 `CI=true` 或 `GITHUB_ACTIONS=true` 时，安装程序会在探测 Git 或做出任何变更之前返回，因为自动化任务不会使用贡献者钩子。否则，安装程序要求 Git 2.26 或更高版本，使 `git config --show-scope` 可以报告由哪个作用域提供配置值；它会将格式版本为 0 的仓库升级到格式版本 1，启用 `extensions.worktreeConfig`，并将当前 worktree 的 `core.hooksPath` 设为指向 `$GIT_DIR/dsh-hooks` 的绝对路径。
+钩子安装以 worktree 为作用域。当 `CI=true` 或 `GITHUB_ACTIONS=true` 时，安装程序会在探测 Git 或做出任何变更之前返回，因为自动化任务不会使用贡献者钩子。否则，安装程序要求 Git 2.27 或更高版本，使 `git config --show-scope` 可以报告由哪个作用域提供配置值；它使用 Lefthook 1.7.15，因为后续版本要求 Git 2.31；它会将格式版本为 0 的仓库升级到格式版本 1，启用 `extensions.worktreeConfig`，并将当前 worktree 的 `core.hooksPath` 设为指向 `$GIT_DIR/dsh-hooks` 的绝对路径。
 
 升级格式 0 之前，安装程序会拒绝共用配置中直接设置的 `extensions.*`；它还会拒绝直接设置的 `core.worktree` 或 `core.bare=true`，以及启用扩展后将被激活的非空休眠 worktree 配置。迁移会移除直接设置的 `core.bare=false`，因为 false 是 Git 的默认值。共用仓库配置和每个已有的 `config.worktree` 都必须是常规文件。这些检查会禁用 include 展开，因为 Git 的仓库格式解析器也会忽略 include 目标。仓库级锁会串行化迁移和钩子写入；释放时，锁的进程 ID、随机令牌、文件身份和完整内容必须仍然匹配。所属进程已结束或内容无效的锁必须人工介入恢复，而不能自动强制解除。
 
@@ -36,6 +36,6 @@ Lefthook 生成的钩子会优先使用安装时从对应 worktree 记录的绝�
 
 安装或移除任一 worktree 不再改变其他 worktree 的生效钩子、二进制文件路径或生成的钩子字节。并发安装会串行执行，重复安装保持幂等；[快速本地 Git 钩子](2026-07-22-fast-local-git-hooks.md)所规定的任务与延迟边界保持不变。
 
-首次安装后，仓库会采用 Git 格式版本 1。安装程序需要 Git 2.26 来使用 `--show-scope`；worktree 配置扩展本身的出现早于该命令。自定义 worktree 钩子管理器需要明确选择集成方式；继承钩子路径可继续供其他 worktree 使用，但当前 worktree 显式启用 Lefthook 后，其中不会运行这些继承钩子，除非贡献者通过 `lefthook.yml` 将其串联起来。
+首次安装后，仓库会采用 Git 格式版本 1。安装程序需要 Git 2.27，因为 Lefthook 1.7.15 会拒绝 Git 2.26；worktree 配置扩展本身的出现早于该命令。自定义 worktree 钩子管理器需要明确选择集成方式；继承钩子路径可继续供其他 worktree 使用，但当前 worktree 显式启用 Lefthook 后，其中不会运行这些继承钩子，除非贡献者通过 `lefthook.yml` 将其串联起来。
 
 旧的共用钩子会为尚未升级的 worktree 保留在磁盘上。它们可能逐渐陈旧，但自动删除这些钩子会破坏已注册但所在分支尚未采用本安装程序的 worktree。
