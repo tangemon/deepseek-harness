@@ -16,7 +16,7 @@ import { spawnSync } from 'node:child_process'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import lefthookPackage from 'lefthook/package.json' with { type: 'json' }
 
-const MINIMUM_GIT = [2, 26, 0]
+const MINIMUM_GIT = [2, 27, 0]
 const HOOKS_DIRECTORY = 'dsh-hooks'
 const OWNERSHIP_MARKER = '.dsh-lefthook-owned'
 const OWNERSHIP_MARKER_VERSION = 1
@@ -238,7 +238,7 @@ function assertSupportedGit(root) {
   for (let index = 0; index < MINIMUM_GIT.length; index += 1) {
     if (actual[index] > MINIMUM_GIT[index]) return
     if (actual[index] < MINIMUM_GIT[index]) {
-      throw new Error(`Git 2.26 or newer is required for worktree-local hooks; found ${version}`)
+      throw new Error(`Git 2.27 or newer is required for worktree-local hooks; found ${version}`)
     }
   }
 }
